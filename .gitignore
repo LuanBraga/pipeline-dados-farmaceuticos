@@ -1,6 +1,9 @@
 # Arquivos de ambiente
 .env
 
+# Arquivos de ambiente virtual
+.venv
+
 # Diretórios de cache e bytecode do Python
 __pycache__/
 *.py[cod]
