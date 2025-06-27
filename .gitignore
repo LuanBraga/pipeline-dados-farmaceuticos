@@ -1,0 +1,19 @@
+# Arquivos de ambiente
+.env
+
+# Diretórios de cache e bytecode do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Arquivos de dados brutos e logs
+dados_brutos/
+logs/
+
+# Arquivos do IDE
+.vscode/
+.idea/
+
+# Volumes do Docker
+postgres_data/
+elastic_data/
