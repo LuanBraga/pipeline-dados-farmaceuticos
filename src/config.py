@@ -3,8 +3,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# define a raiz do projeto como o diretório pai do diretório 'src'
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # diretorio para armazenar os dados brutos
-DATA_DIR = "dados_brutos"
+DATA_DIR = os.path.join(PROJECT_ROOT, "dados_brutos")
 
 # nome do arquivo da ANVISA
 ANVISA_FILENAME = "DADOS_ABERTOS_MEDICAMENTOS.csv"
