@@ -83,13 +83,13 @@ source .venv/bin/activate
 **Windows (PowerShell):**
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\activate
 ```
 
 **Windows (CMD):**
 
 ```cmd
-.\.venv\Scripts\activate.bat
+.\.venv\Scripts\activate
 ```
 
 #### 4.2 Instale Dependências
@@ -101,10 +101,18 @@ pip install -r requirements.txt
 #### 4.3 Execute o Pipeline Localmente
 
 ```bash
-python src/main.py
+python -m src.main
 ```
 
+
 *Nota:* Certifique-se de que PostgreSQL e Elasticsearch estejam acessíveis localmente.
+
+
+#### Extra: Gerando o Arquivo requirements.txt
+
+```bash
+pip freeze > requirements.txt
+```
 
 ---
 
@@ -112,15 +120,13 @@ python src/main.py
 
 ```
 .
-├── data/                 # Dados brutos e processados
-├── notebooks/            # Notebooks para análise e exploração
+├── dados_brutos/         # Dados brutos e processados
 ├── src/                  # Código fonte
-│   ├── __init__.py
+│   ├── config.py         # Configuração
 │   ├── extract.py        # Extração
 │   ├── transform.py      # Limpeza e transformação
 │   ├── load.py           # Carga em banco de dados e busca
 │   └── main.py           # Entrada do pipeline
-├── tests/                # Testes automatizados
 ├── .env                  # Variáveis de ambiente (não versionado)
 ├── .env.example          # Exemplo de variáveis
 ├── .gitignore            # Ignorados pelo Git
