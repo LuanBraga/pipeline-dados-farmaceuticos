@@ -3,6 +3,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# REFATORAR os.path PARA pathlib
+# from pathlib import Path
+#
+# # Define a raiz do projeto de forma orientada a objetos
+# PROJECT_ROOT = Path(__file__).resolve().parent.parent
+#
+# # diretório para armazenar os dados brutos
+# DATA_DIR = PROJECT_ROOT / "dados_brutos"
+#
+# # garante que o diretório de dados exista
+# DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+
 # define a raiz do projeto como o diretório pai do diretório 'src'
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
