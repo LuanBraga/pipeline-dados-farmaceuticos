@@ -1,6 +1,8 @@
 import logging
 import time
-from src import extract, transform, load
+from src import extract, transform
+
+#, load
 
 # configuracao do logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -20,9 +22,9 @@ def main():
         logger.info("Etapa de Extração concluída.")
 
         # Etapa 2: Transformação e limpeza dos dados
-        # logger.info("Iniciando a etapa de Transformação.")
-        # final_df = transform.run()
-        # logger.info("Etapa de Transformação concluída.")
+        logger.info("Iniciando a etapa de Transformação.")
+        final_df = transform.run()
+        logger.info("Etapa de Transformação concluída.")
 
         # Etapa 3: Carga dos dados no banco e no motor de busca
         # if final_df is not None and not final_df.empty:
