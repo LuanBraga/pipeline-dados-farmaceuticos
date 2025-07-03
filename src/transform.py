@@ -1,177 +1,172 @@
-import pandas as pd
 import os
-import re
+import pandas as pd
 import logging
-from unidecode import unidecode
+import glob
 from src import config
 
-# Configuração do logging para o módulo de transformação
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# encontra o arquivo XLS mais recente da CMED no diretório de dados brutos
+def find_latest_cmed_file():
+    search_pattern = os.path.join(config.DATA_DIR, '*.xls*')
+    files = glob.glob(search_pattern)
+    if not files:
+        return None
+    # Encontra o arquivo mais recente baseado no tempo de modificação
+    latest_file = max(files, key=os.path.getmtime)
+    logger.info(f"Arquivo CMED encontrado: {latest_file}")
+    return latest_file
 
-def _normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Normaliza os nomes das colunas de um DataFrame.
-    Converte para minúsculas, remove acentos, e junta as palavras.
-    """
-    new_columns = []
-    for col in df.columns:
-        col_str = str(col)
-        # Remove acentos e converte para minúsculas
-        normalized_col = unidecode(col_str.lower())
-        # Substitui underscore e espaços por nada, juntando as palavras
-        normalized_col = re.sub(r'[_-\s]+', '', normalized_col)
-        # Remove caracteres não alfanuméricos restantes
-        normalized_col = re.sub(r'[^a-z0-9]', '', normalized_col)
-        new_columns.append(normalized_col)
-    df.columns = new_columns
+# limpa e padroniza o DataFrame de dados da ANVISA
+def clean_anvisa_data(df):
+    logger.info("Iniciando limpeza dos dados da ANVISA.")
+    anvisa_cols = [
+        'TIPO_PRODUTO', 'NOME_PRODUTO', 'CATEGORIA_REGULATORIA',
+        'NUMERO_REGISTRO_PRODUTO', 'CLASSE_TERAPEUTICA',
+        'EMPRESA_DETENTORA_REGISTRO', 'SITUACAO_REGISTRO'
+    ]
+
+    cols_to_use = [col for col in anvisa_cols if col in df.columns]
+    df = df[cols_to_use].copy()
+
+    # converte para string, remove não-dígitos e trunca para 9 caracteres
+    if 'NUMERO_REGISTRO_PRODUTO' in df.columns:
+        df['NUMERO_REGISTRO_PRODUTO'] = df['NUMERO_REGISTRO_PRODUTO'].astype(str).str.replace(r'\D', '', regex=True)
+        df.dropna(subset=['NUMERO_REGISTRO_PRODUTO'], inplace=True)
+        df['NUMERO_REGISTRO_PRODUTO'] = df['NUMERO_REGISTRO_PRODUTO'].str.slice(0, 9)
+
+    # remove espaços em branco extras das colunas de texto
+    for col in df.select_dtypes(include=['object']).columns:
+        df[col] = df[col].str.strip()
+
+    logger.info("Limpeza dos dados da ANVISA concluída.")
     return df
 
-
-def _clean_text_field(series: pd.Series) -> pd.Series:
-    """Limpa e padroniza uma coluna de texto."""
-    return series.astype(str).str.strip().str.upper()
-
-
-def _clean_registro_ms(series: pd.Series) -> pd.Series:
-    """Limpa a coluna de registro MS, mantendo apenas os dígitos."""
-    return series.astype(str).str.replace(r'\D', '', regex=True)
-
-
-def _find_cmed_file() -> str | None:
-    """Busca dinamicamente por um arquivo da CMED (XLS ou XLSX) no diretório de dados."""
-    try:
-        files = os.listdir(config.DATA_DIR)
-        for file in files:
-            if file.lower().endswith(('.xls', '.xlsx')):
-                logger.info(f"Arquivo da CMED encontrado: {file}")
-                return os.path.join(config.DATA_DIR, file)
-        return None
-    except FileNotFoundError:
-        logger.error(f"Diretório de dados brutos não encontrado em: {config.DATA_DIR}")
-        return None
-
-
-def _load_and_process_anvisa_data() -> pd.DataFrame | None:
-    """Carrega e processa os dados do arquivo da ANVISA."""
-    anvisa_path = os.path.join(config.DATA_DIR, config.ANVISA_FILENAME)
-    if not os.path.exists(anvisa_path):
-        logger.error(f"Arquivo da ANVISA não encontrado em: {anvisa_path}")
-        return None
-
-    logger.info(f"Carregando dados da ANVISA de {config.ANVISA_FILENAME}...")
-    df_anvisa = pd.read_csv(anvisa_path, sep=';', encoding='latin-1', low_memory=False)
-
-    df_anvisa = _normalize_column_names(df_anvisa)
-
-    anvisa_cols = {
-        'numeroregistroproduto': 'registro_ms',
-        'nomeproduto': 'produto',
-        'principioativo': 'principio_ativo',
-        'empresadetentoraregistro': 'empresa',
-        'situacaoregistro': 'situacao_registro'
+# limpa e padroniza o DataFrame de dados da CMED
+def clean_cmed_data(df):
+    logger.info("Iniciando limpeza dos dados da CMED.")
+    cmed_col_rename = {
+        'SUBSTÂNCIA': 'SUBSTANCIA',
+        'LABORATÓRIO': 'LABORATORIO',
+        'CLASSE TERAPÊUTICA': 'CLASSE_TERAPEUTICA_CMED',
+        'TIPO DE PRODUTO (STATUS DO PRODUTO)': 'TIPO_PRODUTO_CMED',
+        'PF Sem Impostos': 'PF_SEM_IMPOSTOS'
     }
+    df = df.rename(columns=cmed_col_rename)
 
-    # Verifica se todas as colunas esperadas estão presentes após a normalização
-    missing_cols = [k for k in anvisa_cols if k not in df_anvisa.columns]
-    if missing_cols:
-        logger.error(f"As seguintes colunas esperadas não foram encontradas no arquivo da ANVISA: {missing_cols}")
-        logger.error(f"Colunas disponíveis: {df_anvisa.columns.tolist()}")
-        return None
+    cmed_cols = [
+        'SUBSTANCIA', 'LABORATORIO', 'CNPJ', 'REGISTRO', 'PRODUTO',
+        'APRESENTAÇÃO', 'CLASSE_TERAPEUTICA_CMED', 'TIPO_PRODUTO_CMED',
+        'TARJA', 'PF_SEM_IMPOSTOS'
+    ]
+    cols_to_use = [col for col in cmed_cols if col in df.columns]
+    df = df[cols_to_use].copy()
 
-    df_anvisa = df_anvisa[list(anvisa_cols.keys())].rename(columns=anvisa_cols)
+    if 'REGISTRO' in df.columns:
+        df['REGISTRO'] = df['REGISTRO'].astype(str).str.replace(r'\D', '', regex=True)
+        df.dropna(subset=['REGISTRO'], inplace=True)
+        # cria uma coluna base para o merge, com os 9 primeiros dígitos
+        df['REGISTRO_BASE'] = df['REGISTRO'].str.slice(0, 9)
 
-    df_anvisa['registro_ms'] = _clean_registro_ms(df_anvisa['registro_ms'])
-    for col in ['produto', 'principio_ativo', 'empresa', 'situacao_registro']:
-        if col in df_anvisa.columns:
-            df_anvisa[col] = _clean_text_field(df_anvisa[col])
+    if 'PF_SEM_IMPOSTOS' in df.columns:
+        df['PF_SEM_IMPOSTOS'] = pd.to_numeric(
+            df['PF_SEM_IMPOSTOS'].astype(str).str.replace('.', '', regex=False).str.replace(',', '.', regex=False),
+            errors='coerce'
+        )
+    # remove espaços em branco extras das colunas de texto
+    for col in df.select_dtypes(include=['object']).columns:
+        if col != 'REGISTRO_BASE':
+            df[col] = df[col].str.strip()
 
-    logger.info(f"Dados da ANVISA processados. {df_anvisa.shape[0]} registros encontrados.")
-    return df_anvisa
+    logger.info("Limpeza dos dados da CMED concluída.")
+    return df
 
+# realiza o merge dos dataframes da ANVISA e CMED
+def merge_datasets(anvisa_df, cmed_df):
+    logger.info("Iniciando a unificação dos datasets.")
+    merged_df = pd.merge(
+        anvisa_df,
+        cmed_df,
+        left_on='NUMERO_REGISTRO_PRODUTO',
+        right_on='REGISTRO_BASE',
+        how='inner' # 'inner' join para manter apenas os registros que existem em ambas as bases
+    )
+    logger.info(f"Unificação concluída. {len(merged_df)} registros correspondentes encontrados.")
+    return merged_df
 
-def _load_and_process_cmed_data(cmed_path: str) -> pd.DataFrame | None:
-    """Carrega e processa os dados do arquivo da CMED."""
-    logger.info(f"Carregando dados da CMED de {os.path.basename(cmed_path)}...")
-    df_cmed = pd.read_excel(cmed_path, header=None, sheet_name=0)
-
-    header_row_index = -1
-    for i, row in df_cmed.iterrows():
-        if row.astype(str).str.contains('REGISTRO|EAN|APRESENTAÇÃO', case=False, na=False, regex=True).any():
-            header_row_index = i
-            logger.info(f"Cabeçalho do arquivo CMED identificado na linha {i + 1}.")
-            break
-
-    if header_row_index == -1:
-        logger.error("Cabeçalho não encontrado no arquivo da CMED. A estrutura pode ter mudado.")
-        return None
-
-    df_cmed.columns = df_cmed.iloc[header_row_index]
-    df_cmed = df_cmed.iloc[header_row_index + 1:].reset_index(drop=True)
-
-    df_cmed = _normalize_column_names(df_cmed)
-
-    col_registro = next((col for col in df_cmed.columns if 'registro' in col), None)
-    col_ean = next((col for col in df_cmed.columns if 'ean' in col), None)
-    col_apresentacao = next((col for col in df_cmed.columns if 'apresentacao' in col or 'apresenta__o' in col), None)
-
-    if not all([col_registro, col_ean, col_apresentacao]):
-        logger.error(
-            "Não foi possível encontrar as colunas essenciais (registro, ean, apresentacao) no arquivo da CMED.")
-        return None
-
-    cmed_cols = {col_registro: 'registro_ms', col_ean: 'ean_1', col_apresentacao: 'apresentacao'}
-    df_cmed = df_cmed[list(cmed_cols.keys())].rename(columns=cmed_cols)
-
-    df_cmed['registro_ms'] = _clean_registro_ms(df_cmed['registro_ms'])
-    df_cmed['apresentacao'] = _clean_text_field(df_cmed['apresentacao'])
-
-    df_cmed = df_cmed.dropna(subset=['registro_ms'])
-    df_cmed = df_cmed.drop_duplicates(subset=['registro_ms'], keep='first')
-
-    logger.info(f"Dados da CMED processados. {df_cmed.shape[0]} registros únicos encontrados.")
-    return df_cmed
-
-
-def run() -> pd.DataFrame | None:
-    """Orquestra a etapa de transformação dos dados."""
+# orquestra o processo de transformação: carregar, limpar, unificar e salvar os dados
+def run():
     logger.info("--- Iniciando Etapa de Transformação de Dados ---")
 
-    df_anvisa = _load_and_process_anvisa_data()
-    if df_anvisa is None or df_anvisa.empty:
-        logger.error("Pipeline interrompido: falha ao processar dados da ANVISA.")
-        return None
+    anvisa_path = os.path.join(config.DATA_DIR, config.ANVISA_FILENAME)
+    cmed_path = find_latest_cmed_file()
 
-    cmed_path = _find_cmed_file()
-    if not cmed_path:
-        logger.warning("Arquivo da CMED não encontrado. O pipeline continuará sem os dados de apresentação e EAN.")
-        df_anvisa['ean_1'] = 'N/A'
-        df_anvisa['apresentacao'] = 'N/A'
-        return df_anvisa
+    if not os.path.exists(anvisa_path) or cmed_path is None:
+        error_message = "Arquivos brutos não encontrados. Execute a etapa de extração primeiro."
+        logger.error(error_message)
+        raise FileNotFoundError(error_message)
 
-    df_cmed = _load_and_process_cmed_data(cmed_path)
-    if df_cmed is None or df_cmed.empty:
-        logger.warning("Falha ao processar dados da CMED. O pipeline continuará sem os dados de apresentação e EAN.")
-        df_anvisa['ean_1'] = 'N/A'
-        df_anvisa['apresentacao'] = 'N/A'
-        return df_anvisa
+    try:
+        logger.info(f"Carregando dados da ANVISA de: {anvisa_path}")
+        df_anvisa = pd.read_csv(anvisa_path, sep=';', encoding='latin1', low_memory=False)
 
-    logger.info("Unindo dados da ANVISA e CMED com base no 'registro_ms'...")
-    df_final = pd.merge(
-        df_anvisa,
-        df_cmed[['registro_ms', 'ean_1', 'apresentacao']],
-        on='registro_ms',
-        how='left'
-    )
+        logger.info(f"Carregando dados da CMED de: {cmed_path}")
+        # pula as primeiras linhas que são cabeçalho no arquivo da CMED
+        df_cmed = pd.read_excel(cmed_path, skiprows=41)
+    except Exception as e:
+        logger.critical(f"Falha ao carregar os dados brutos: {e}", exc_info=True)
+        raise
 
-    df_final.fillna('N/A', inplace=True)
+    # limpeza e padronização
+    df_anvisa_clean = clean_anvisa_data(df_anvisa)
+    df_cmed_clean = clean_cmed_data(df_cmed)
 
-    df_final = df_final[df_final['registro_ms'].str.strip().ne('')]
-    df_final = df_final[df_final['registro_ms'].ne('NA')]
-    df_final = df_final.dropna(subset=['registro_ms'])
+    # unificação
+    df_unified = merge_datasets(df_anvisa_clean, df_cmed_clean)
 
-    logger.info(f"Dados unificados. Total de {df_final.shape[0]} registros.")
-    logger.info("--- Etapa de Transformação Concluída com Sucesso ---")
+    # organização final
+    logger.info("Organizando o resultado final...")
 
+    final_columns = [
+        'TIPO_PRODUTO',
+        'NOME_PRODUTO',
+        'CATEGORIA_REGULATORIA',
+        'NUMERO_REGISTRO_PRODUTO',
+        'CLASSE_TERAPEUTICA',
+        'EMPRESA_DETENTORA_REGISTRO',
+        'SITUACAO_REGISTRO',
+        'SUBSTANCIA',
+        'LABORATORIO',
+        'CNPJ',
+        'REGISTRO',
+        'PRODUTO',
+        'APRESENTAÇÃO',
+        'CLASSE_TERAPEUTICA_CMED',
+        'TIPO_PRODUTO_CMED',
+        'TARJA',
+        'PF_SEM_IMPOSTOS'
+    ]
+
+    # Garante que apenas colunas existentes sejam selecionadas
+    final_columns_exist = [col for col in final_columns if col in df_unified.columns]
+    df_final = df_unified[final_columns_exist]
+
+    # salvando o resultado ---
+    output_path = os.path.join(config.PROCESSED_DATA_DIR, config.UNIFIED_FILENAME)
+    try:
+        logger.info(f"Salvando arquivo unificado em: {output_path}")
+        df_final.to_csv(output_path, index=False, sep=';', encoding='utf-8-sig')
+        logger.info(f"Arquivo '{config.UNIFIED_FILENAME}' salvo com sucesso.")
+    except Exception as e:
+        logger.critical(f"Falha ao salvar o arquivo processado: {e}", exc_info=True)
+        raise
+
+    logger.info("--- Etapa de Transformação de Dados Concluída com Sucesso ---")
     return df_final
+
+if __name__ == '__main__':
+    try:
+        run()
+    except Exception as e:
+        logger.error(f"Ocorreu um erro fatal durante a execução da transformação: {e}")
