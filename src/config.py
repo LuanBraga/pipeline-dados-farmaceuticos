@@ -22,8 +22,14 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # diretorio para armazenar os dados brutos
 DATA_DIR = os.path.join(PROJECT_ROOT, "dados_brutos")
 
+# Diretório para armazenar os dados processados e unificados
+PROCESSED_DATA_DIR = os.path.join(PROJECT_ROOT, "dados_processados")
+
 # nome do arquivo da ANVISA
 ANVISA_FILENAME = "DADOS_ABERTOS_MEDICAMENTOS.csv"
+
+# Nome do arquivo unificado a ser gerado
+UNIFIED_FILENAME = "ANVISA_CMED_UNIFICADO.csv"
 
 # URL direta para o arquivo csv da ANVISA
 ANVISA_CSV_URL = "https://dados.anvisa.gov.br/dados/DADOS_ABERTOS_MEDICAMENTOS.csv"
@@ -50,3 +56,4 @@ ES_INDEX_NAME = "medicamentos"
 
 # garante que o diretório de dados exista
 os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
