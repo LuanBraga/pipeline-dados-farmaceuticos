@@ -22,9 +22,7 @@ def find_latest_cmed_file():
 def clean_anvisa_data(df):
     logger.info("Iniciando limpeza dos dados da ANVISA.")
     anvisa_cols = [
-        'TIPO_PRODUTO', 'NOME_PRODUTO', 'CATEGORIA_REGULATORIA',
-        'NUMERO_REGISTRO_PRODUTO', 'CLASSE_TERAPEUTICA',
-        'EMPRESA_DETENTORA_REGISTRO', 'SITUACAO_REGISTRO'
+        'NUMERO_REGISTRO_PRODUTO', 'CLASSE_TERAPEUTICA', 'PRINCIPIO_ATIVO'
     ]
 
     cols_to_use = [col for col in anvisa_cols if col in df.columns]
@@ -47,27 +45,26 @@ def clean_anvisa_data(df):
 def clean_cmed_data(df):
     logger.info("Iniciando limpeza dos dados da CMED.")
     cmed_col_rename = {
-        'SUBSTÂNCIA': 'SUBSTANCIA',
         'LABORATÓRIO': 'LABORATORIO',
-        'CLASSE TERAPÊUTICA': 'CLASSE_TERAPEUTICA_CMED',
-        'TIPO DE PRODUTO (STATUS DO PRODUTO)': 'TIPO_PRODUTO_CMED',
-        'PF Sem Impostos': 'PF_SEM_IMPOSTOS'
+        'REGISTRO': 'REGISTRO_CMED',
+        'APRESENTAÇÃO': 'APRESENTACAO',
+        'TIPO DE PRODUTO (STATUS DO PRODUTO)': 'TIPO_PRODUTO',
     }
     df = df.rename(columns=cmed_col_rename)
 
     cmed_cols = [
-        'SUBSTANCIA', 'LABORATORIO', 'CNPJ', 'REGISTRO', 'PRODUTO',
-        'APRESENTAÇÃO', 'CLASSE_TERAPEUTICA_CMED', 'TIPO_PRODUTO_CMED',
-        'TARJA', 'PF_SEM_IMPOSTOS'
+        'LABORATORIO', 'CNPJ', 'REGISTRO_CMED', 'PRODUTO',
+        'APRESENTACAO', 'TIPO_PRODUTO',
+        'TARJA'
     ]
     cols_to_use = [col for col in cmed_cols if col in df.columns]
     df = df[cols_to_use].copy()
 
-    if 'REGISTRO' in df.columns:
-        df['REGISTRO'] = df['REGISTRO'].astype(str).str.replace(r'\D', '', regex=True)
-        df.dropna(subset=['REGISTRO'], inplace=True)
+    if 'REGISTRO_CMED' in df.columns:
+        df['REGISTRO_CMED'] = df['REGISTRO_CMED'].astype(str).str.replace(r'\D', '', regex=True)
+        df.dropna(subset=['REGISTRO_CMED'], inplace=True)
         # cria uma coluna base para o merge, com os 9 primeiros dígitos
-        df['REGISTRO_BASE'] = df['REGISTRO'].str.slice(0, 9)
+        df['REGISTRO_BASE'] = df['REGISTRO_CMED'].str.slice(0, 9)
 
     if 'PF_SEM_IMPOSTOS' in df.columns:
         df['PF_SEM_IMPOSTOS'] = pd.to_numeric(
@@ -129,23 +126,16 @@ def run():
     logger.info("Organizando o resultado final...")
 
     final_columns = [
-        'TIPO_PRODUTO',
-        'NOME_PRODUTO',
-        'CATEGORIA_REGULATORIA',
         'NUMERO_REGISTRO_PRODUTO',
         'CLASSE_TERAPEUTICA',
-        'EMPRESA_DETENTORA_REGISTRO',
-        'SITUACAO_REGISTRO',
-        'SUBSTANCIA',
+        'PRINCIPIO_ATIVO',
         'LABORATORIO',
         'CNPJ',
-        'REGISTRO',
+        'REGISTRO_CMED',
         'PRODUTO',
-        'APRESENTAÇÃO',
-        'CLASSE_TERAPEUTICA_CMED',
-        'TIPO_PRODUTO_CMED',
+        'APRESENTACAO',
+        'TIPO_PRODUTO',
         'TARJA',
-        'PF_SEM_IMPOSTOS'
     ]
 
     # Garante que apenas colunas existentes sejam selecionadas
