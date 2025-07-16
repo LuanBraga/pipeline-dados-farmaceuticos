@@ -51,7 +51,7 @@ def clean_cmed_data(df):
         'REGISTRO': 'REGISTRO_CMED',
         'APRESENTAÇÃO': 'APRESENTACAO',
         'TIPO DE PRODUTO (STATUS DO PRODUTO)': 'TIPO_PRODUTO',
-        'CÓDIGO GGREM ': 'CODIGO_GGREM',
+        'CÓDIGO GGREM': 'CODIGO_GGREM',
         'REGIME DE PREÇO': 'REGIME_DE_PRECO',
         'PMC Sem Impostos': 'PRECO_MAXIMO_AO_CONSUMIDOR_SEM_IMPOSTOS',
         'PMC 0 %': 'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_SEM_ICMS',
@@ -123,6 +123,48 @@ def clean_cmed_data(df):
     ]
     cols_to_use = [col for col in cmed_cols if col in df.columns]
     df = df[cols_to_use].copy()
+
+    price_cols = [
+        'PRECO_MAXIMO_AO_CONSUMIDOR_SEM_IMPOSTOS',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_SEM_ICMS',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_12',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_12_AREA_DE_LIVRE_COMERCIO',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_17',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_17_AREA_DE_LIVRE_COMERCIO',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_17_5',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_17_5_AREA_DE_LIVRE_COMERCIO',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_18',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_18_AREA_DE_LIVRE_COMERCIO',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_19',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_19_AREA_DE_LIVRE_COMERCIO',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_19_5',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_20',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_20_AREA_DE_LIVRE_COMERCIO',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_20_5',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_20_5_AREA_DE_LIVRE_COMERCIO',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_21',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_21_AREA_DE_LIVRE_COMERCIO',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_22',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_22_AREA_DE_LIVRE_COMERCIO',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_22_5',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_22_5_AREA_DE_LIVRE_COMERCIO',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_23',
+        'PRECO_MAXIMO_AO_CONSUMIDOR_PERCENTUAL_23_AREA_DE_LIVRE_COMERCIO'
+    ]
+
+    # Remove asteriscos e converte colunas de preço para numérico
+    logger.info("Removendo asteriscos e convertendo colunas de preço para numérico.")
+    for col in price_cols:
+        if col in df.columns:
+            # O parâmetro 'coerce' transforma valores inválidos (ex: vazios) em NaN (Not a Number)
+            df[col] = pd.to_numeric(df[col].astype(str).str.replace('*', '', regex=False).str.replace(',', '.', regex=False), errors='coerce')
+
+    # Remove linhas onde nenhum preço foi declarado
+    linhas_antes = len(df)
+    # Remove as linhas onde TODAS as colunas da lista 'price_cols' são nulas (NaN)
+    df.dropna(subset=price_cols, how='all', inplace=True)
+    linhas_depois = len(df)
+    logger.info(f"{linhas_antes - linhas_depois} linhas removidas por não conterem valores de preço.")
 
     if 'REGISTRO_CMED' in df.columns:
         df['REGISTRO_CMED'] = df['REGISTRO_CMED'].astype(str).str.replace(r'\D', '', regex=True)
