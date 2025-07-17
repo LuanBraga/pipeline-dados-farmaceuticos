@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 # navega na página da CMED para encontrar a URL do arquivo XLS mais recente.
 # a lógica busca por um card com o título "PMC - xls" e extrai o link pai.
-def find_latest_cmed_xls_url():
+def find_cmed_xls_url():
     try:
         logger.info(f"Buscando a página de preços da CMED em: {config.CMED_PRICES_PAGE_URL}")
         response = requests.get(config.CMED_PRICES_PAGE_URL, timeout=30, verify=False)
@@ -76,13 +76,11 @@ def run():
 
     # download do arquivo da CMED
     logger.info("Iniciando busca pela URL do arquivo da CMED...")
-    # primeiro, encontra a URL mais recente
-    cmed_url = find_latest_cmed_xls_url()
+    # primeiro, encontra a URL
+    cmed_url = find_cmed_xls_url()
 
     # prossegue com o download apenas se a URL foi encontrada
     if cmed_url:
-        logger.info("Iniciando download do arquivo da CMED...")
-
         # parseia a URL para obter seus componentes e procura o nome do arquivo dinamicamente
         parsed_url = urlparse(cmed_url)
         path_components = parsed_url.path.split('/')
@@ -95,12 +93,28 @@ def run():
 
         cmed_file_path = os.path.join(config.DATA_DIR,cmed_filename)
 
-        if not download_file(cmed_url, cmed_file_path):
-            error_message = "PIPELINE INTERROMPIDO: Falha crítica no download do arquivo da CMED."
-            logger.critical(error_message)
-            raise RuntimeError(error_message)
+        if os.path.exists(cmed_file_path):
+            logger.info(f"O arquivo '{cmed_filename}' já existe no destino. Download pulado.")
+        else:
+            logger.info(f"Nova versão do arquivo CMED detectada: '{cmed_filename}'.")
 
-        logger.info("Download do arquivo da CMED concluído com sucesso.")
+            # procura e remove qualquer versão antiga do arquivo CMED antes de baixar a nova.
+            logger.info("Procurando por versões antigas para remover...")
+            for filename_in_dir in os.listdir(config.DATA_DIR):
+                if filename_in_dir.startswith('xls_conformidade_site_') and filename_in_dir.endswith(('.xls', '.xlsx')):
+                    old_file_path = os.path.join(config.DATA_DIR, filename_in_dir)
+                    try:
+                        os.remove(old_file_path)
+                        logger.info(f"Arquivo antigo '{filename_in_dir}' removido com sucesso.")
+                    except OSError as e:
+                        logger.error(f"Erro ao remover o arquivo antigo '{filename_in_dir}': {e}")
+
+            logger.info(f"Iniciando download de '{cmed_filename}'...")
+            if not download_file(cmed_url, cmed_file_path):
+                error_message = "PIPELINE INTERROMPIDO: Falha crítica no download do arquivo da CMED."
+                logger.critical(error_message)
+                raise RuntimeError(error_message)
+            logger.info("Download do arquivo da CMED concluído com sucesso.")
     else:
         error_message = "PIPELINE INTERROMPIDO: Não foi possível obter a URL do arquivo da CMED. A extração não pode ser concluída."
         logger.critical(error_message)
