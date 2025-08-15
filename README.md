@@ -90,7 +90,7 @@ docker-compose down
 
 -   **Criação**:
     ```bash
-    python3 -m venv .venv
+    python -m venv .venv
     ```
 -   **Ativação**:
     -   **macOS/Linux**: `source .venv/bin/activate`
