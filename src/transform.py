@@ -273,7 +273,7 @@ def run():
     final_columns_exist = [col for col in final_columns if col in df_unified.columns]
     df_final = df_unified[final_columns_exist]
 
-    logger.info("Substituindo valores NaN por None para compatibilidade com JSON.")
+    df_final = df_final.where(pd.notna(df_final), None)
     df_final = df_final.where(pd.notna(df_final), None)
 
     # salvando o resultado ---
