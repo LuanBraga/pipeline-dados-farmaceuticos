@@ -74,7 +74,7 @@ def load_to_elasticsearch(df: pd.DataFrame):
         for i, error in enumerate(e.errors[:5]):
             logger.error(f"  Erro #{i+1}: {error}")
         raise
-
+        logger.critical(f"Falha ao indexar {len(e.errors)} documento(s). Exibindo os 5 primeiros erros:", exc_info=False)
     except Exception as e:
         logger.critical(f"Falha ao carregar dados para o Elasticsearch: {e}", exc_info=True)
         raise
