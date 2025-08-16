@@ -274,7 +274,7 @@ def run():
     df_final = df_unified[final_columns_exist]
 
     logger.info("Substituindo valores NaN por None para compatibilidade com JSON.")
-    df_final = df_final.replace({np.nan: None})
+    df_final = df_final.where(pd.notna(df_final), None)
 
     # salvando o resultado ---
     output_path = os.path.join(config.PROCESSED_DATA_DIR, config.UNIFIED_FILENAME)
