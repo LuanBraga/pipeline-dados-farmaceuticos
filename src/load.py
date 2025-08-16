@@ -23,7 +23,7 @@ def load_to_postgres(df: pd.DataFrame):
         logger.info(f"Conectando ao banco de dados PostgreSQL em {config.DB_HOST}...")
         engine = create_engine(config.DATABASE_URL)
 
-        logger.info("Carregando dados na tabela 'medicamentos'...")
+        df.to_sql(config.DB_TABLE_NAME, engine, if_exists='replace', index=False, chunksize=1000)
         # Usar 'if_exists='replace'' é conveniente para desenvolvimento,
         # mas em produção, uma estratégia de 'append' ou 'upsert' seria mais comum.
         df.to_sql('medicamentos', engine, if_exists='replace', index=False, chunksize=1000)
