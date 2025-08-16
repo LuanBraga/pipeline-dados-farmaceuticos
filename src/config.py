@@ -45,6 +45,7 @@ DB_PASSWORD = quote_plus(os.getenv("POSTGRES_PASSWORD"))
 DB_NAME = os.getenv("POSTGRES_DB")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
+DB_TABLE_NAME = os.getenv("DB_TABLE_NAME", "medicamentos")
 
 # string de conexão para o SQLAlchemy
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
