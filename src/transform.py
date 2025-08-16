@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import logging
 import glob
+import numpy as np
 from src import config
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -271,6 +272,9 @@ def run():
     # Garante que apenas colunas existentes sejam selecionadas
     final_columns_exist = [col for col in final_columns if col in df_unified.columns]
     df_final = df_unified[final_columns_exist]
+
+    df_final = df_final.where(pd.notna(df_final), None)
+    df_final = df_final.where(pd.notna(df_final), None)
 
     # salvando o resultado ---
     output_path = os.path.join(config.PROCESSED_DATA_DIR, config.UNIFIED_FILENAME)
