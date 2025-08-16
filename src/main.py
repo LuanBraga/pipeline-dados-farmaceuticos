@@ -1,8 +1,6 @@
 import logging
 import time
-from src import extract, transform
-
-#, load
+from src import extract, transform, load
 
 # configuracao do logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -27,12 +25,12 @@ def main():
         logger.info("Etapa de Transformação concluída.")
 
         # Etapa 3: Carga dos dados no banco e no motor de busca
-        # if final_df is not None and not final_df.empty:
-        #    logger.info("Iniciando a etapa de Carga.")
-        #    load.run(final_df)
-        #    logger.info("Etapa de Carga concluída.")
-        # else:
-        #    logger.warning("O pipeline foi interrompido pois a etapa de transformação não retornou dados.")
+        if final_df is not None and not final_df.empty:
+           logger.info("Iniciando a etapa de Carga.")
+           load.run(final_df)
+           logger.info("Etapa de Carga concluída.")
+        else:
+           logger.warning("O pipeline foi interrompido pois a etapa de transformação não retornou dados.")
 
     except Exception as e:
         logger.critical(f"Ocorreu um erro fatal no pipeline: {e}", exc_info=True)
