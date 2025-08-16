@@ -89,6 +89,6 @@ def run(df: pd.DataFrame):
         load_to_elasticsearch(df)
         logger.info("--- Etapa de Carga de Dados Concluída com Sucesso ---")
     except Exception as e:
-        logger.error(f"Ocorreu um erro durante a etapa de carga: {e}")
+        logger.critical(f"Ocorreu um erro durante a etapa de carga: {e}", exc_info=True)
         # Propaga a exceção para que o main.py possa capturá-la
         raise
