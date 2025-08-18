@@ -12,6 +12,7 @@ __pycache__/
 # Arquivos de dados brutos e logs
 dados_brutos/
 dados_processados/
+dados_manuais/
 logs/
 
 # Arquivos do IDE
