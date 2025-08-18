@@ -117,11 +117,13 @@ python -m src.main
 .
 ├── dados_brutos/         # Armazena os dados brutos extraídos
 ├── dados_processados/    # Armazena os dados processados e unificados
+├── dados_manuais/        # Armazena dados inseridos manualmente (e.g., tabelas de referência)
 ├── src/                  # Código-fonte do pipeline
 │   ├── config.py         # Configurações (URLs, paths, credenciais)
 │   ├── extract.py        # Módulo de extração de dados
 │   ├── transform.py      # Módulo de transformação e limpeza
 │   ├── load.py           # Módulo de carga de dados (em desenvolvimento)
+│   ├── manual_loader.py  # Script para carregar dados manuais
 │   └── main.py           # Ponto de entrada do pipeline
 ├── .env                  # Variáveis de ambiente (não versionado)
 ├── .env.example          # Exemplo de variáveis de ambiente
@@ -131,6 +133,45 @@ python -m src.main
 ├── README.md             # Documentação principal do projeto
 └── requirements.txt      # Dependências Python
 ```
+
+## Carregador de Dados Manuais
+
+O script `src/manual_loader.py` é uma ferramenta de linha de comando para carregar dados de arquivos CSV, localizados no diretório `dados_manuais/`, diretamente para o PostgreSQL e o Elasticsearch.
+
+### Função
+
+Este script foi projetado para popular o banco de dados com tabelas de referência ou dados que não são obtidos através do pipeline principal de ETL, como a tabela de alíquotas de ICMS por estado.
+
+### Como Executar
+
+Para executar o script, utilize o seguinte comando a partir da raiz do projeto, garantindo que seu ambiente virtual esteja ativado:
+
+```bash
+python -m src.manual_loader [NOME_DO_ARQUIVO_CSV] [OPÇÕES]
+```
+
+**Argumentos:**
+
+*   `NOME_DO_ARQUIVO_CSV` (obrigatório): O nome do arquivo CSV que você deseja carregar. O arquivo deve estar localizado no diretório `dados_manuais/`.
+*   `--table-name` (opcional): O nome que será usado para a tabela no PostgreSQL e para o índice no Elasticsearch. Se este argumento for omitido, o nome será derivado do nome do arquivo CSV (removendo a extensão `.csv`).
+
+**Exemplos:**
+
+1.  **Carregar alíquotas de ICMS:**
+
+    Este comando carrega o arquivo `aliquotas_icms_estados.csv` e cria uma tabela e um índice chamados `aliquotas_icms_estados`.
+
+    ```bash
+    python -m src.manual_loader aliquotas_icms_estados.csv
+    ```
+
+2.  **Especificando um nome para a tabela/índice:**
+
+    Este comando carrega o mesmo arquivo, mas cria uma tabela e um índice com o nome `icms_brasil`.
+
+    ```bash
+    python -m src.manual_loader aliquotas_icms_estados.csv --table-name icms_brasil
+    ```
 
 ## Como Contribuir
 

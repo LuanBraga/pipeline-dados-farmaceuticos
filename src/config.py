@@ -26,6 +26,9 @@ DATA_DIR = os.path.join(PROJECT_ROOT, "dados_brutos")
 # Diretório para armazenar os dados processados e unificados
 PROCESSED_DATA_DIR = os.path.join(PROJECT_ROOT, "dados_processados")
 
+# Diretório para dados manuais
+MANUAL_DATA_DIR = os.path.join(PROJECT_ROOT, "dados_manuais")
+
 # nome do arquivo da ANVISA
 ANVISA_FILENAME = "DADOS_ABERTOS_MEDICAMENTOS.csv"
 
@@ -45,6 +48,8 @@ DB_PASSWORD = quote_plus(os.getenv("POSTGRES_PASSWORD"))
 DB_NAME = os.getenv("POSTGRES_DB")
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
+
+# Refere-se à tabela de medicamentos
 DB_TABLE_NAME = os.getenv("DB_TABLE_NAME")
 
 # string de conexão para o SQLAlchemy
@@ -54,8 +59,13 @@ DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NA
 ES_HOST = os.getenv("ES_HOST")
 ES_PORT = int(os.getenv("ES_PORT"))
 ES_URL = f"http://{ES_HOST}:{ES_PORT}"
-ES_INDEX_NAME = "medicamentos"
+
+# Refere-se ao índice de medicamentos
+ES_INDEX_NAME = os.getenv("ES_INDEX_NAME")
 
 # garante que o diretório de dados exista
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
+
+# Garante que o diretório de dados manuais exista
+os.makedirs(MANUAL_DATA_DIR, exist_ok=True)

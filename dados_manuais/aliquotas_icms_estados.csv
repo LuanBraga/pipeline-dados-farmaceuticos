@@ -1,0 +1,30 @@
+uf,estado,aliquota,generico
+AC,Acre,19.00,false
+AL,Alagoas,19.00,false
+AP,Amapá,18.00,false
+AM,Amazonas,20.00,false
+BA,Bahia,20.50,false
+CE,Ceará,20.00,false
+DF,Distrito Federal,17.00,false
+ES,Espírito Santo	,17.00,false
+GO,Goiás,19.00,false
+MA,Maranhão,23.00,false
+MT,Mato Grosso,17.00,false
+MS,Mato Grosso Do Sul,17.00,false
+MG,Minas Gerais,18.00,false
+MG,Minas Gerais,12.00,true
+PA,Pará,19.00,false
+PB,Paraíba,20.00,false
+PR,Paraná,19.50,false
+PE,Pernambuco,20.50,false
+RJ,Rio De Janeiro,22.00,false
+RN,Rio Grande Do Norte,20.00,false
+RS,Rio Grande Do Sul,17.00,false
+RO,Rondônia,19.50,false
+RR,Roraima,20.00,false
+SC,Santa Catarina,17.00,false
+SP,São Paulo,18.00,false
+SP,São Paulo,12.00,true
+SE,Sergipe,19.00,false
+TO,Tocantins,20.00,false
+PI,Piauí,22.50,false
