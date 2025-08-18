@@ -1,30 +1,30 @@
-uf,estado,aliquota,generico
-AC,Acre,19.00,false
-AL,Alagoas,19.00,false
-AP,Amapá,18.00,false
-AM,Amazonas,20.00,false
-BA,Bahia,20.50,false
-CE,Ceará,20.00,false
-DF,Distrito Federal,17.00,false
-ES,Espírito Santo	,17.00,false
-GO,Goiás,19.00,false
-MA,Maranhão,23.00,false
-MT,Mato Grosso,17.00,false
-MS,Mato Grosso Do Sul,17.00,false
-MG,Minas Gerais,18.00,false
-MG,Minas Gerais,12.00,true
-PA,Pará,19.00,false
-PB,Paraíba,20.00,false
-PR,Paraná,19.50,false
-PE,Pernambuco,20.50,false
-RJ,Rio De Janeiro,22.00,false
-RN,Rio Grande Do Norte,20.00,false
-RS,Rio Grande Do Sul,17.00,false
-RO,Rondônia,19.50,false
-RR,Roraima,20.00,false
-SC,Santa Catarina,17.00,false
-SP,São Paulo,18.00,false
-SP,São Paulo,12.00,true
-SE,Sergipe,19.00,false
-TO,Tocantins,20.00,false
-PI,Piauí,22.50,false
+ID,UF,ESTADO,ALIQUOTA,GENERICO
+1,AC,Acre,19.00,false
+2,AL,Alagoas,19.00,false
+3,AP,Amapá,18.00,false
+4,AM,Amazonas,20.00,false
+5,BA,Bahia,20.50,false
+6,CE,Ceará,20.00,false
+7,DF,Distrito Federal,17.00,false
+8,ES,Espírito Santo,17.00,false
+9,GO,Goiás,19.00,false
+10,MA,Maranhão,23.00,false
+11,MT,Mato Grosso,17.00,false
+12,MS,Mato Grosso Do Sul,17.00,false
+13,MG,Minas Gerais,18.00,false
+14,MG,Minas Gerais,12.00,true
+15,PA,Pará,19.00,false
+16,PB,Paraíba,20.00,false
+17,PR,Paraná,19.50,false
+18,PE,Pernambuco,20.50,false
+19,RJ,Rio De Janeiro,22.00,false
+20,RN,Rio Grande Do Norte,20.00,false
+21,RS,Rio Grande Do Sul,17.00,false
+22,RO,Rondônia,19.50,false
+23,RR,Roraima,20.00,false
+24,SC,Santa Catarina,17.00,false
+25,SP,São Paulo,18.00,false
+26,SP,São Paulo,12.00,true
+27,SE,Sergipe,19.00,false
+28,TO,Tocantins,20.00,false
+29,PI,Piauí,22.50,false

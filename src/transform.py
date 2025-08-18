@@ -173,6 +173,11 @@ def clean_cmed_data(df):
         # cria uma coluna base para o merge, com os 9 primeiros dígitos
         df['REGISTRO_BASE'] = df['REGISTRO_CMED'].str.slice(0, 9)
 
+    # Limpa a coluna CNPJ, removendo caracteres não numéricos
+    if 'CNPJ' in df.columns:
+        logger.info("Limpando a coluna CNPJ.")
+        df['CNPJ'] = df['CNPJ'].astype(str).str.replace(r'\D', '', regex=True)
+
     # remove espaços em branco extras das colunas de texto
     for col in df.select_dtypes(include=['object']).columns:
         if col != 'REGISTRO_BASE':
