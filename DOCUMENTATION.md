@@ -23,6 +23,7 @@ O código-fonte está organizado no diretório `src/` e dividido nos seguintes m
 -   `extract.py`: Contém a lógica para baixar os arquivos de dados da ANVISA e da CMED.
 -   `transform.py`: Responsável pela limpeza, padronização e unificação dos dados.
 -   `load.py`: Contém a lógica para carregar os dados transformados no PostgreSQL e no Elasticsearch.
+-   `manual_loader.py`: Script autônomo para carregar dados manuais (e.g., tabelas de referência) para os sistemas de destino.
 
 ---
 
@@ -32,7 +33,7 @@ O código-fonte está organizado no diretório `src/` e dividido nos seguintes m
 
 Este módulo utiliza a biblioteca `python-dotenv` para carregar variáveis de ambiente de um arquivo `.env`, permitindo uma configuração segura e flexível. As principais configurações incluem:
 
--   **Caminhos de Diretórios**: Define os locais para `dados_brutos` e `dados_processados`.
+-   **Caminhos de Diretórios**: Define os locais para `dados_brutos`, `dados_processados` e `dados_manuais`.
 -   **URLs das Fontes**: Armazena os links para os dados da ANVISA e da CMED.
 -   **Nomes de Arquivos**: Especifica os nomes dos arquivos de entrada e saída.
 -   **Credenciais de Banco de Dados**: Configurações de conexão para o PostgreSQL.
@@ -90,6 +91,19 @@ O orquestrador do pipeline. Suas responsabilidades são:
 -   **Execução Sequencial**: Chama as funções `run()` dos módulos `extract`, `transform` e `load` na ordem correta.
 -   **Logging**: Configura e utiliza o `logging` para registrar informações, avisos e erros de cada etapa do processo.
 -   **Monitoramento**: Mede e informa o tempo total de execução do pipeline.
+
+### `manual_loader.py`
+
+Este script é uma ferramenta de linha de comando autônoma, projetada para carregar dados de arquivos CSV do diretório `dados_manuais/` para o PostgreSQL e o Elasticsearch.
+
+-   **Função**: Serve para popular o banco de dados com dados de referência ou informações que não fazem parte do fluxo principal de ETL (por exemplo, tabelas de alíquotas de impostos, mapeamentos personalizados, etc.).
+-   **Argumentos da Linha de Comando**:
+    -   `filename`: O nome do arquivo CSV a ser carregado (obrigatório).
+    -   `--table-name`: O nome da tabela/índice de destino (opcional; se omitido, é derivado do nome do arquivo).
+-   **Operação**:
+    1.  Lê o arquivo CSV especificado usando `pandas`.
+    2.  Conecta-se ao PostgreSQL e carrega os dados, substituindo a tabela se ela já existir (`if_exists='replace'`).
+    3.  Conecta-se ao Elasticsearch, deleta o índice existente (se houver) e o recria, indexando os novos dados em massa (`bulk`).
 
 ---
 
