@@ -6,7 +6,6 @@ import time
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.types import String, Boolean, Integer, Numeric
-from elasticsearch import Elasticsearch, helpers
 from src import config
 
 # Configuração do sistema de logging.
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def load_manual_data(csv_filename: str, db_identifier: str):
     """
-    Orquestra a carga de um arquivo CSV manual para o PostgreSQL e Elasticsearch.
+    Orquestra a carga de um arquivo CSV manual para o PostgreSQL.
     """
     logger.info(f"--- Iniciando Carga de Dados Manuais: {csv_filename} ---")
 
@@ -34,7 +33,6 @@ def load_manual_data(csv_filename: str, db_identifier: str):
         df.columns = [col.upper() for col in df.columns]
 
         _load_to_postgres(df, db_identifier)
-        _load_to_elasticsearch(df, db_identifier)
 
         logger.info(f"--- Carga de '{csv_filename}' Concluída com Sucesso ---")
 
@@ -100,83 +98,17 @@ def _load_to_postgres(df: pd.DataFrame, table_name: str):
         raise
 
 
-def _load_to_elasticsearch(df: pd.DataFrame, index_alias: str):
-    """
-    Carrega dados de um DataFrame para o Elasticsearch usando a estratégia
-    de "blue-green" com aliases para uma atualização sem indisponibilidade.
-    """
-    # Mapeamento do Elasticsearch para os dados de alíquotas.
-    es_mapping = {
-        "properties": {
-            "ID": {"type": "integer"},
-            "UF": {"type": "keyword"},
-            "ESTADO": {"type": "text", "analyzer": "brazilian"},
-            "ALIQUOTA": {"type": "scaled_float", "scaling_factor": 100},
-            "GENERICO": {"type": "boolean"}
-        }
-    }
-    new_index_name = f"{index_alias}-{int(time.time())}"
-
-    try:
-        logger.info("Conectando ao Elasticsearch...")
-        es = Elasticsearch(config.ES_URL)
-
-        logger.info(f"Criando o novo índice '{new_index_name}'.")
-        es.indices.create(index=new_index_name, mappings=es_mapping)
-
-        # Prepara os documentos para a indexação em massa.
-        actions = [
-            {"_index": new_index_name, "_id": record["ID"], "_source": record}
-            for record in df.to_dict(orient='records')
-        ]
-
-        logger.info(f"Indexando {len(actions)} documentos em '{new_index_name}'...")
-        helpers.bulk(es, actions)
-        logger.info(f"Dados indexados com sucesso em '{new_index_name}'.")
-
-        # Inicia o processo atómico de atualização do alias.
-        logger.info(f"Atualizando o alias '{index_alias}' para apontar para '{new_index_name}'.")
-        old_indices = []
-        if es.indices.exists_alias(name=index_alias):
-            alias_info = es.indices.get_alias(name=index_alias)
-            old_indices = list(alias_info.keys())
-
-        alias_actions = {
-            "actions": [
-                {"add": {"index": new_index_name, "alias": index_alias}}
-            ]
-        }
-        for old_index in old_indices:
-            alias_actions["actions"].append({"remove": {"index": old_index, "alias": index_alias}})
-
-        es.indices.update_aliases(body=alias_actions)
-
-        # Remove os índices antigos que já não estão em uso.
-        for old_index in old_indices:
-            logger.info(f"Deletando índice antigo: {old_index}")
-            es.indices.delete(index=old_index)
-
-        logger.info(f"Alias '{index_alias}' atualizado e índices antigos removidos.")
-
-    except Exception as e:
-        logger.critical(f"Falha ao carregar dados para '{index_alias}': {e}", exc_info=True)
-        # Garante a limpeza do novo índice em caso de erro.
-        es = Elasticsearch(config.ES_URL)
-        es.indices.delete(index=new_index_name, ignore_unavailable=True)
-        raise
-
-
 def main():
     """
     Ponto de entrada do script, responsável por analisar os argumentos
     da linha de comando e iniciar o processo de carga.
     """
-    parser = argparse.ArgumentParser(description="Carregador de dados manuais para PostgreSQL e Elasticsearch.")
+    parser = argparse.ArgumentParser(description="Carregador de dados manuais para PostgreSQL.")
     parser.add_argument("filename", type=str, help="Nome do arquivo CSV em 'dados_manuais'.")
-    parser.add_argument("--table-name", type=str, help="Nome da tabela/índice de destino.")
+    parser.add_argument("--table-name", type=str, help="Nome da tabela de destino.")
     args = parser.parse_args()
 
-    # Define o identificador para a tabela e índice, usando o nome do arquivo se não for especificado.
+    # Define o identificador para a tabela, usando o nome do arquivo se não for especificado.
     db_identifier = args.table_name or os.path.splitext(args.filename)[0]
     load_manual_data(args.filename, db_identifier)
 
