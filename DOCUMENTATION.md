@@ -110,15 +110,15 @@ O orquestrador do pipeline. As suas responsabilidades são:
 
 ### `manual_loader.py`
 
-Este script é uma ferramenta de linha de comando autónoma, projetada para carregar dados de ficheiros CSV do diretório `dados_manuais/` para o PostgreSQL e o Elasticsearch.
+Este script é uma ferramenta de linha de comando autónoma, projetada para carregar dados de ficheiros CSV do diretório `dados_manuais/` para o PostgreSQL.
 
 -   **Função**: Serve para popular o banco de dados com dados de referência ou informações que não fazem parte do fluxo principal de ETL (por exemplo, tabelas de alíquotas de impostos, mapeamentos personalizados, etc.).
 -   **Argumentos da Linha de Comando**:
     -   `filename`: O nome do ficheiro CSV a ser carregado (obrigatório).
-    -   `--table-name`: O nome da tabela/índice de destino (opcional; se omitido, é derivado do nome do ficheiro).
+    -   `--table-name`: O nome da tabela de destino (opcional; se omitido, é derivado do nome do ficheiro).
 -   **Operação**:
     -   Lê o ficheiro CSV especificado.
-    -   Utiliza a **mesma estratégia de carga segura (blue-green)** do módulo `load.py` para garantir que a inserção dos dados manuais também ocorra sem qualquer indisponibilidade dos sistemas de destino.
+    -   Utiliza a **mesma estratégia de carga segura (blue-green)** do módulo `load.py` para garantir que a inserção dos dados manuais também ocorra sem qualquer indisponibilidade do PostgreSQL.
 
 ---
 

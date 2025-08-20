@@ -137,7 +137,7 @@ python -m src.main
 
 ## Carregador de Dados Manuais
 
-O script `src/manual_loader.py` é uma ferramenta de linha de comando para carregar dados de arquivos CSV, localizados no diretório `dados_manuais/`, diretamente para o PostgreSQL e o Elasticsearch.
+O script `src/manual_loader.py` é uma ferramenta de linha de comando para carregar dados de arquivos CSV, localizados no diretório `dados_manuais/`, diretamente para o PostgreSQL.
 
 ### Função
 
@@ -156,21 +156,21 @@ python -m src.manual_loader [NOME_DO_ARQUIVO_CSV] [OPÇÕES]
 **Argumentos:**
 
 *   `NOME_DO_ARQUIVO_CSV` (obrigatório): O nome do arquivo CSV que você deseja carregar. O arquivo deve estar localizado no diretório `dados_manuais/`.
-*   `--table-name` (opcional): O nome que será usado para a tabela no PostgreSQL e para o índice no Elasticsearch. Se este argumento for omitido, o nome será derivado do nome do arquivo CSV (removendo a extensão `.csv`).
+*   `--table-name` (opcional): O nome que será usado para a tabela no PostgreSQL. Se este argumento for omitido, o nome será derivado do nome do arquivo CSV (removendo a extensão `.csv`).
 
 **Exemplos:**
 
 1.  **Carregar alíquotas de ICMS:**
 
-    Este comando carrega o arquivo `aliquotas_icms_estados.csv` e cria uma tabela e um índice chamados `aliquotas_icms_estados`.
+    Este comando carrega o arquivo `aliquotas_icms_estados.csv` e cria uma tabela chamada `aliquotas_icms_estados`.
 
     ```bash
     python -m src.manual_loader aliquotas_icms_estados.csv
     ```
 
-2.  **Especificando um nome para a tabela/índice:**
+2.  **Especificando um nome para a tabela:**
 
-    Este comando carrega o mesmo arquivo, mas cria uma tabela e um índice com o nome `icms_brasil`.
+    Este comando carrega o mesmo arquivo, mas cria uma tabela com o nome `icms_brasil`.
 
     ```bash
     python -m src.manual_loader aliquotas_icms_estados.csv --table-name icms_brasil
