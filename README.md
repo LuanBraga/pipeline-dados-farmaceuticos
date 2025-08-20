@@ -4,13 +4,14 @@
 
 O **Pipeline de Dados Farmacêuticos** é uma solução de ETL (Extração, Transformação e Carga) automatizada e containerizada, projetada para extrair, limpar, padronizar e combinar informações de fontes farmacêuticas oficiais do Brasil: a Agência Nacional de Vigilância Sanitária (ANVISA) e a Câmara de Regulação do Mercado de Medicamentos (CMED).
 
-Após o processamento, os dados unificados são armazenados em um banco de dados PostgreSQL para consultas estruturadas e indexados em um motor de busca Elasticsearch para otimizar buscas textuais complexas e rápidas.
+Após o processamento, os dados unificados são armazenados em um banco de dados PostgreSQL para consultas estruturadas e indexados em um motor de busca Elasticsearch para otimizar buscas textuais complexas e rápidas. A arquitetura foi desenhada para garantir uma carga de dados robusta e sem indisponibilidade (zero downtime).
 
 ## Funcionalidades
 
 -   **Extração de Dados**: Coleta automática de dados da ANVISA e CMED.
 -   **Limpeza e Padronização**: Normalização de formatos, remoção de duplicatas e correção de inconsistências.
 -   **Unificação de Dados**: Combinação dos dados das diferentes fontes em um dataset integrado.
+-   **Carga de Dados Robusta**: Utiliza uma estratégia de "blue-green deployment" para carregar dados no PostgreSQL e Elasticsearch sem causar indisponibilidade (*zero downtime*).
 -   **Armazenamento Otimizado**: Dados estruturados armazenados em PostgreSQL e indexados em Elasticsearch.
 -   **Containerização**: Implementação com Docker para garantir consistência, portabilidade e facilidade de deploy.
 
@@ -20,7 +21,7 @@ O pipeline segue um padrão ETL clássico, dividido em três etapas principais:
 
 1.  **Extração (Extract)**: O módulo `extract.py` baixa os dados brutos da ANVISA (CSV) e da CMED (XLS/XLSX) e os armazena no diretório `dados_brutos/`.
 2.  **Transformação (Transform)**: O módulo `transform.py` utiliza a biblioteca `pandas` para carregar os dados brutos, limpá-los, padronizá-los e unificá-los. O resultado é um único arquivo CSV (`ANVISA_CMED_UNIFICADO.csv`) salvo no diretório `dados_processados/`.
-3.  **Carga (Load)**: O módulo `load.py` (atualmente em desenvolvimento) será responsável por carregar os dados processados no PostgreSQL e no Elasticsearch.
+3.  **Carga (Load)**: O módulo `load.py` implementa uma estratégia de **atualização sem indisponibilidade** (*zero-downtime*). Os dados são carregados em um local temporário (tabela/índice) e, após a conclusão, a transição para os novos dados é feita de forma atómica, garantindo que os sistemas de destino permaneçam operacionais durante todo o processo.
 
 O fluxo de dados pode ser resumido da seguinte forma:
 
@@ -40,7 +41,7 @@ Transformação (transform.py)
 Diretório dados_processados/
         |
         v
-Carga (load.py)
+Carga Robusta (load.py)
         |
         v
 Sistemas de Destino (PostgreSQL, Elasticsearch)
@@ -122,7 +123,7 @@ python -m src.main
 │   ├── config.py         # Configurações (URLs, paths, credenciais)
 │   ├── extract.py        # Módulo de extração de dados
 │   ├── transform.py      # Módulo de transformação e limpeza
-│   ├── load.py           # Módulo de carga de dados (em desenvolvimento)
+│   ├── load.py           # Módulo de carga de dados (com estratégia zero-downtime)
 │   ├── manual_loader.py  # Script para carregar dados manuais
 │   └── main.py           # Ponto de entrada do pipeline
 ├── .env                  # Variáveis de ambiente (não versionado)
@@ -136,11 +137,13 @@ python -m src.main
 
 ## Carregador de Dados Manuais
 
-O script `src/manual_loader.py` é uma ferramenta de linha de comando para carregar dados de arquivos CSV, localizados no diretório `dados_manuais/`, diretamente para o PostgreSQL e o Elasticsearch.
+O script `src/manual_loader.py` é uma ferramenta de linha de comando para carregar dados de arquivos CSV, localizados no diretório `dados_manuais/`, diretamente para o PostgreSQL.
 
 ### Função
 
 Este script foi projetado para popular o banco de dados com tabelas de referência ou dados que não são obtidos através do pipeline principal de ETL, como a tabela de alíquotas de ICMS por estado.
+
+Ele utiliza a mesma estratégia de carga **sem indisponibilidade** (*zero downtime*) do pipeline principal, garantindo que a inserção de dados manuais também ocorra de forma segura e sem interrupções.
 
 ### Como Executar
 
@@ -153,21 +156,21 @@ python -m src.manual_loader [NOME_DO_ARQUIVO_CSV] [OPÇÕES]
 **Argumentos:**
 
 *   `NOME_DO_ARQUIVO_CSV` (obrigatório): O nome do arquivo CSV que você deseja carregar. O arquivo deve estar localizado no diretório `dados_manuais/`.
-*   `--table-name` (opcional): O nome que será usado para a tabela no PostgreSQL e para o índice no Elasticsearch. Se este argumento for omitido, o nome será derivado do nome do arquivo CSV (removendo a extensão `.csv`).
+*   `--table-name` (opcional): O nome que será usado para a tabela no PostgreSQL. Se este argumento for omitido, o nome será derivado do nome do arquivo CSV (removendo a extensão `.csv`).
 
 **Exemplos:**
 
 1.  **Carregar alíquotas de ICMS:**
 
-    Este comando carrega o arquivo `aliquotas_icms_estados.csv` e cria uma tabela e um índice chamados `aliquotas_icms_estados`.
+    Este comando carrega o arquivo `aliquotas_icms_estados.csv` e cria uma tabela chamada `aliquotas_icms_estados`.
 
     ```bash
     python -m src.manual_loader aliquotas_icms_estados.csv
     ```
 
-2.  **Especificando um nome para a tabela/índice:**
+2.  **Especificando um nome para a tabela:**
 
-    Este comando carrega o mesmo arquivo, mas cria uma tabela e um índice com o nome `icms_brasil`.
+    Este comando carrega o mesmo arquivo, mas cria uma tabela com o nome `icms_brasil`.
 
     ```bash
     python -m src.manual_loader aliquotas_icms_estados.csv --table-name icms_brasil
