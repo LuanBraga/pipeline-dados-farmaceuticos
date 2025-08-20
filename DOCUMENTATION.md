@@ -85,7 +85,7 @@ Este módulo é responsável por carregar os dados processados nos sistemas de a
     3.  Os dados antigos são removidos.
 
 -   **Carregamento no PostgreSQL**:
-    1.  Os dados são carregados num *schema* temporário (ex: `medicamentos_temp_12345`).
+    1.  Os dados são carregados numa *tabela* temporária (ex: `medicamentos_temp_12345`).
     2.  Uma transação atómica é iniciada para:
         a. Remover a chave primária da tabela principal para evitar conflitos.
         b. Truncar a tabela principal (`medicamentos`).
