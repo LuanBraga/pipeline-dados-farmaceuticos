@@ -92,7 +92,7 @@ def _load_to_postgres(df: pd.DataFrame, table_name: str):
 
         logger.info(f"{len(df)} registros carregados com sucesso em '{table_name}'.")
 
-    except SQLAlchemyError as e:
+    except Exception as e:
         logger.critical(f"Falha ao carregar dados para '{table_name}': {e}", exc_info=True)
         with engine.connect() as connection:
             connection.execute(text(f'DROP TABLE IF EXISTS "{temp_table_name}"'))
