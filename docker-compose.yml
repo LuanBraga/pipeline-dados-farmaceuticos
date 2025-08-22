@@ -43,20 +43,18 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.1
     container_name: keycloak_auth_server
-    command: start
+    command: start-dev
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
 
       KC_DB: postgres
-      KC_DB_URL_HOST: postgres # Nome do serviço do PostgreSQL na rede Docker
+      KC_DB_URL_HOST: postgres
       KC_DB_URL_DATABASE: ${POSTGRES_DB}
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_DB_SCHEMA: ${KC_DB_SCHEMA}
-
       KC_HOSTNAME: ${KC_HOSTNAME}
-      KC_HTTP_ENABLED: '${KC_HTTP_ENABLED}'
     ports:
       - "8888:8080"
     depends_on:
