@@ -125,24 +125,53 @@ def load_to_elasticsearch(df: pd.DataFrame):
         logger.warning("O DataFrame está vazio. Nenhum dado será carregado no Elasticsearch.")
         return
 
-    # Define o mapeamento do Elasticsearch, especificando tipos e analisadores.
-    # O analisador 'brazilian' melhora as buscas textuais em português.
+    # Mapeamento otimizado para autocomplete.
+    # Os campos PRODUTO, PRINCIPIO_ATIVO e APRESENTACAO agora têm um subcampo 'suggest'
+    # do tipo 'search_as_you_type'.
     es_mapping = {
         "properties": {
             "NUMERO_REGISTRO_PRODUTO": {"type": "keyword"},
             "CLASSE_TERAPEUTICA": {"type": "text", "analyzer": "brazilian"},
-            "PRINCIPIO_ATIVO": {"type": "text", "analyzer": "brazilian"},
             "LABORATORIO": {"type": "text", "analyzer": "brazilian"},
             "CNPJ": {"type": "keyword"},
             "REGISTRO_CMED": {"type": "keyword"},
-            "PRODUTO": {"type": "text", "analyzer": "brazilian"},
-            "APRESENTACAO": {"type": "text", "analyzer": "brazilian"},
             "TIPO_PRODUTO": {"type": "keyword"},
             "TARJA": {"type": "keyword"},
             "CODIGO_GGREM": {"type": "long"},
             "REGIME_DE_PRECO": {"type": "keyword"},
             "RESTRICAO_HOSPITALAR": {"type": "boolean"},
             "LISTA_DE_CONCESSAO_DE_CREDITO_TRIBUTARIO_PIS_COFINS": {"type": "keyword"},
+
+            # Campo otimizado para busca de texto completo e autocomplete
+            "PRODUTO": {
+                "type": "text",
+                "analyzer": "brazilian",
+                "fields": {
+                    "suggest": {
+                        "type": "search_as_you_type"
+                    }
+                }
+            },
+            # Campo otimizado para busca de texto completo e autocomplete
+            "PRINCIPIO_ATIVO": {
+                "type": "text",
+                "analyzer": "brazilian",
+                "fields": {
+                    "suggest": {
+                        "type": "search_as_you_type"
+                    }
+                }
+            },
+            # Campo otimizado para busca de texto completo e autocomplete
+            "APRESENTACAO": {
+                "type": "text",
+                "analyzer": "brazilian",
+                "fields": {
+                    "suggest": {
+                        "type": "search_as_you_type"
+                    }
+                }
+            },
         }
     }
 
