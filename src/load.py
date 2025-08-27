@@ -125,14 +125,16 @@ def load_to_elasticsearch(df: pd.DataFrame):
         logger.warning("O DataFrame está vazio. Nenhum dado será carregado no Elasticsearch.")
         return
 
+    logger.info("Criando campo 'PRINCIPIO_ATIVO_UNICO' para otimização de busca.")
+    df['PRINCIPIO_ATIVO_UNICO'] = ~df['PRINCIPIO_ATIVO'].astype(str).str.contains('+', regex=False)
+
     # Mapeamento otimizado para autocomplete.
-    # Os campos PRODUTO, PRINCIPIO_ATIVO e APRESENTACAO agora têm um subcampo 'suggest'
+    # Os campos PRODUTO, PRINCIPIO_ATIVO, APRESENTACAO e LABORATORIO agora têm um subcampo 'suggest'
     # do tipo 'search_as_you_type'.
     es_mapping = {
         "properties": {
             "NUMERO_REGISTRO_PRODUTO": {"type": "keyword"},
             "CLASSE_TERAPEUTICA": {"type": "text", "analyzer": "brazilian"},
-            "LABORATORIO": {"type": "text", "analyzer": "brazilian"},
             "CNPJ": {"type": "keyword"},
             "REGISTRO_CMED": {"type": "keyword"},
             "TIPO_PRODUTO": {"type": "keyword"},
@@ -172,6 +174,18 @@ def load_to_elasticsearch(df: pd.DataFrame):
                     }
                 }
             },
+            # Campo otimizado para busca de texto completo e autocomplete
+            "LABORATORIO": {
+                "type": "text",
+                "analyzer": "brazilian",
+                "fields": {
+                    "suggest": {
+                        "type": "search_as_you_type"
+                    }
+                }
+            },
+            # Campo otimizado para otimização de busca booleana
+            "PRINCIPIO_ATIVO_UNICO": {"type": "boolean"},
         }
     }
 
