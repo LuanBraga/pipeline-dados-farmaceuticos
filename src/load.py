@@ -139,9 +139,9 @@ def load_to_elasticsearch(df: pd.DataFrame):
                     "tokenizer": "standard",
                     "filter": [
                         "lowercase",
+                        "asciifolding",
                         "brazilian_stop",
-                        "brazilian_stemmer",
-                        "asciifolding"
+                        "brazilian_stemmer"
                     ]
                 }
             },
