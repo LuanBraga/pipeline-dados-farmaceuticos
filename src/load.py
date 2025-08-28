@@ -126,7 +126,7 @@ def load_to_elasticsearch(df: pd.DataFrame):
         return
 
     logger.info("Criando campo 'PRINCIPIO_ATIVO_UNICO' para otimização de busca.")
-    df['PRINCIPIO_ATIVO_UNICO'] = ~df['PRINCIPIO_ATIVO'].astype(str).str.contains('+', regex=False)
+    df['PRINCIPIO_ATIVO_UNICO'] = ~df['PRINCIPIO_ATIVO'].str.contains('+', regex=False, na=True)
 
     # Mapeamento otimizado para autocomplete.
     # Os campos PRODUTO, PRINCIPIO_ATIVO, APRESENTACAO e LABORATORIO agora têm um subcampo 'suggest'
