@@ -131,10 +131,37 @@ def load_to_elasticsearch(df: pd.DataFrame):
     # Mapeamento otimizado para autocomplete.
     # Os campos PRODUTO, PRINCIPIO_ATIVO, APRESENTACAO e LABORATORIO agora têm um subcampo 'suggest'
     # do tipo 'search_as_you_type'.
+
+    es_settings = {
+        "analysis": {
+            "analyzer": {
+                "brazilian_folding": {
+                    "tokenizer": "standard",
+                    "filter": [
+                        "lowercase",
+                        "asciifolding",
+                        "brazilian_stop",
+                        "brazilian_stemmer"
+                    ]
+                }
+            },
+            "filter": {
+                "brazilian_stop": {
+                    "type": "stop",
+                    "stopwords": "_brazilian_"
+                },
+                "brazilian_stemmer": {
+                    "type": "stemmer",
+                    "language": "brazilian"
+                }
+            }
+        }
+    }
+
     es_mapping = {
         "properties": {
             "NUMERO_REGISTRO_PRODUTO": {"type": "keyword"},
-            "CLASSE_TERAPEUTICA": {"type": "text", "analyzer": "brazilian"},
+            "CLASSE_TERAPEUTICA": {"type": "text", "analyzer": "brazilian_folding"},
             "CNPJ": {"type": "keyword"},
             "REGISTRO_CMED": {"type": "keyword"},
             "TIPO_PRODUTO": {"type": "keyword"},
@@ -147,7 +174,7 @@ def load_to_elasticsearch(df: pd.DataFrame):
             # Campo otimizado para busca de texto completo e autocomplete
             "PRODUTO": {
                 "type": "text",
-                "analyzer": "brazilian",
+                "analyzer": "brazilian_folding",
                 "fields": {
                     "suggest": {
                         "type": "search_as_you_type"
@@ -157,7 +184,7 @@ def load_to_elasticsearch(df: pd.DataFrame):
             # Campo otimizado para busca de texto completo e autocomplete
             "PRINCIPIO_ATIVO": {
                 "type": "text",
-                "analyzer": "brazilian",
+                "analyzer": "brazilian_folding",
                 "fields": {
                     "suggest": {
                         "type": "search_as_you_type"
@@ -167,7 +194,7 @@ def load_to_elasticsearch(df: pd.DataFrame):
             # Campo otimizado para busca de texto completo e autocomplete
             "APRESENTACAO": {
                 "type": "text",
-                "analyzer": "brazilian",
+                "analyzer": "brazilian_folding",
                 "fields": {
                     "suggest": {
                         "type": "search_as_you_type"
@@ -177,7 +204,7 @@ def load_to_elasticsearch(df: pd.DataFrame):
             # Campo otimizado para busca de texto completo e autocomplete
             "LABORATORIO": {
                 "type": "text",
-                "analyzer": "brazilian",
+                "analyzer": "brazilian_folding",
                 "fields": {
                     "suggest": {
                         "type": "search_as_you_type"
@@ -203,7 +230,7 @@ def load_to_elasticsearch(df: pd.DataFrame):
         es = Elasticsearch(config.ES_URL)
 
         logger.info(f"Criando o novo índice '{new_index_name}' com mapeamento explícito.")
-        es.indices.create(index=new_index_name, mappings=es_mapping)
+        es.indices.create(index=new_index_name, mappings=es_mapping, settings=es_settings)
 
         # Prepara os documentos para a indexação em massa (bulk).
         actions = [
