@@ -125,13 +125,40 @@ def load_to_elasticsearch(df: pd.DataFrame):
         logger.warning("O DataFrame está vazio. Nenhum dado será carregado no Elasticsearch.")
         return
 
+    # 1. Cria uma cópia do DataFrame para isolar as modificações.
+    df_es = df.copy()
+
+    # 2. Define a lista de campos a serem removidos.
+    cols_to_remove = [
+        'CLASSE_TERAPEUTICA',
+        'CNPJ',
+        'CODIGO_GGREM',
+        'LISTA_DE_CONCESSAO_DE_CREDITO_TRIBUTARIO_PIS_COFINS',
+        'NUMERO_REGISTRO_PRODUTO',
+        'REGIME_DE_PRECO',
+        'REGISTRO_CMED',
+        'RESTRICAO_HOSPITALAR',
+        'TARJA',
+        'TIPO_PRODUTO'
+    ]
+
+    # 3. Guarda os IDs dos documentos, pois a coluna será removida.
+    cmed_ids = df_es['REGISTRO_CMED']
+
+    # 4. Remove as colunas especificadas do DataFrame.
+    df_es.drop(columns=cols_to_remove, inplace=True, errors='ignore')
+    logger.info(f"Removidas {len(cols_to_remove)} colunas da cópia para o Elasticsearch.")
+
+    # 5. Identifica e remove as colunas de preço da cópia.
+    price_cols_to_drop = [col for col in df_es.columns if col.startswith('PRECO_MAXIMO_AO_CONSUMIDOR')]
+    if price_cols_to_drop:
+        df_es.drop(columns=price_cols_to_drop, inplace=True)
+        logger.info(f"Removidas {len(price_cols_to_drop)} colunas de preço da cópia para o Elasticsearch.")
+
     logger.info("Criando campo 'PRINCIPIO_ATIVO_UNICO' para otimização de busca.")
-    df['PRINCIPIO_ATIVO_UNICO'] = ~df['PRINCIPIO_ATIVO'].str.contains('+', regex=False, na=True)
+    df_es['PRINCIPIO_ATIVO_UNICO'] = ~df_es['PRINCIPIO_ATIVO'].str.contains('+', regex=False, na=True)
 
     # Mapeamento otimizado para autocomplete.
-    # Os campos PRODUTO, PRINCIPIO_ATIVO, APRESENTACAO e LABORATORIO agora têm um subcampo 'suggest'
-    # do tipo 'search_as_you_type'.
-
     es_settings = {
         "analysis": {
             "analyzer": {
@@ -158,68 +185,32 @@ def load_to_elasticsearch(df: pd.DataFrame):
         }
     }
 
+    # 6. Mapeamento do Elasticsearch apenas com os campos restantes.
     es_mapping = {
         "properties": {
-            "NUMERO_REGISTRO_PRODUTO": {"type": "keyword"},
-            "CLASSE_TERAPEUTICA": {"type": "text", "analyzer": "brazilian_folding"},
-            "CNPJ": {"type": "keyword"},
-            "REGISTRO_CMED": {"type": "keyword"},
-            "TIPO_PRODUTO": {"type": "keyword"},
-            "TARJA": {"type": "keyword"},
-            "CODIGO_GGREM": {"type": "long"},
-            "REGIME_DE_PRECO": {"type": "keyword"},
-            "RESTRICAO_HOSPITALAR": {"type": "boolean"},
-            "LISTA_DE_CONCESSAO_DE_CREDITO_TRIBUTARIO_PIS_COFINS": {"type": "keyword"},
-
-            # Campo otimizado para busca de texto completo e autocomplete
             "PRODUTO": {
                 "type": "text",
                 "analyzer": "brazilian_folding",
-                "fields": {
-                    "suggest": {
-                        "type": "search_as_you_type"
-                    }
-                }
+                "fields": {"suggest": {"type": "search_as_you_type"}}
             },
-            # Campo otimizado para busca de texto completo e autocomplete
             "PRINCIPIO_ATIVO": {
                 "type": "text",
                 "analyzer": "brazilian_folding",
-                "fields": {
-                    "suggest": {
-                        "type": "search_as_you_type"
-                    }
-                }
+                "fields": {"suggest": {"type": "search_as_you_type"}}
             },
-            # Campo otimizado para busca de texto completo e autocomplete
             "APRESENTACAO": {
                 "type": "text",
                 "analyzer": "brazilian_folding",
-                "fields": {
-                    "suggest": {
-                        "type": "search_as_you_type"
-                    }
-                }
+                "fields": {"suggest": {"type": "search_as_you_type"}}
             },
-            # Campo otimizado para busca de texto completo e autocomplete
             "LABORATORIO": {
                 "type": "text",
                 "analyzer": "brazilian_folding",
-                "fields": {
-                    "suggest": {
-                        "type": "search_as_you_type"
-                    }
-                }
+                "fields": {"suggest": {"type": "search_as_you_type"}}
             },
-            # Campo otimizado para otimização de busca booleana
             "PRINCIPIO_ATIVO_UNICO": {"type": "boolean"},
         }
     }
-
-    # Mapeia colunas de preço para 'scaled_float' para economizar espaço e manter a precisão.
-    price_cols = [col for col in df.columns if col.startswith('PRECO_MAXIMO_AO_CONSUMIDOR')]
-    for col in price_cols:
-        es_mapping["properties"][col] = {"type": "scaled_float", "scaling_factor": 100}
 
     # Define um nome único para o novo índice e o nome do alias público.
     new_index_name = f"{config.ES_INDEX_NAME}-{int(time.time())}"
@@ -232,15 +223,18 @@ def load_to_elasticsearch(df: pd.DataFrame):
         logger.info(f"Criando o novo índice '{new_index_name}' com mapeamento explícito.")
         es.indices.create(index=new_index_name, mappings=es_mapping, settings=es_settings)
 
-        # Prepara os documentos para a indexação em massa (bulk).
+        # Prepara os documentos para a indexação em massa (bulk), usando os IDs salvos.
         actions = [
             {
                 "_index": new_index_name,
-                "_id": record["REGISTRO_CMED"],
+                "_id": cmed_id,
                 "_source": record
             }
-            for record in df.to_dict(orient='records')
+            for cmed_id, record in zip(cmed_ids, df_es.to_dict(orient='records'))
         ]
+
+        df_es_size_mb = df_es.memory_usage(deep=True).sum() / (1024 * 1024)
+        logger.info(f"Tamanho do DataFrame em memória para indexação: {df_es_size_mb:.2f} MB.")
 
         logger.info(f"Indexando {len(actions)} documentos em '{new_index_name}'...")
         helpers.bulk(es, actions)
