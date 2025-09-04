@@ -146,13 +146,13 @@ def load_to_elasticsearch(df: pd.DataFrame):
     cmed_ids = df_es['REGISTRO_CMED']
 
     # 4. Remove as colunas especificadas do DataFrame.
-    df_es.drop(columns=cols_to_remove, inplace=True, errors='ignore')
+    df_es = df_es.drop(columns=cols_to_remove, errors='ignore')
     logger.info(f"Removidas {len(cols_to_remove)} colunas da cópia para o Elasticsearch.")
 
     # 5. Identifica e remove as colunas de preço da cópia.
     price_cols_to_drop = [col for col in df_es.columns if col.startswith('PRECO_MAXIMO_AO_CONSUMIDOR')]
     if price_cols_to_drop:
-        df_es.drop(columns=price_cols_to_drop, inplace=True)
+        df_es = df_es.drop(columns=price_cols_to_drop)
         logger.info(f"Removidas {len(price_cols_to_drop)} colunas de preço da cópia para o Elasticsearch.")
 
     logger.info("Criando campo 'PRINCIPIO_ATIVO_UNICO' para otimização de busca.")
